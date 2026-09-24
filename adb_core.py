@@ -1,14 +1,45 @@
 import subprocess
 import shutil
+import json
+import os
 
 from logger import  logger
 
-ADB = shutil.which("adb")
-if not ADB:
-    logger.critical("Can't find ADB...")
-    raise RuntimeError("You don't have adb. please, install adb and add it to PATH.")
+def_config = {"ADB" : None, "default_mode" : "rndis"}
+config_name = "config.json"
+
+def load_config():
+    if not os.path.exists(config_name):
+        save_config(def_config)
+    try:
+        with open(config_name, "r") as f:
+            logger.info(f"loading {config_name}... ")
+            return json.load(f)
+    except (json.JSONDecodeError):
+        logger.error(f"{config_name} not founded, creating file...")
+        save_config(def_config)
+        return json.load(f)
+        
+def save_config(val):
+    logger.info("config changed...")
+    with open(config_name, "w") as f:
+        return json.dump(val, f)
     
-target_mode = "rndis"
+config_dict = dict(load_config())
+
+ADB = config_dict.get("ADB")
+if not ADB:    
+    try:
+        ADB = shutil.which("adb")
+        def_config["ADB"] = ADB
+        save_config(def_config)
+    except:
+        logger.critical("Can't find ADB...")
+        raise RuntimeError("You don't have adb. please, install adb and add it to PATH.")
+    
+target_mode = config_dict.get("default_mode")
+if not target_mode:
+    target_mode = "rndis"
     
 def adbRun(*command):
     comlist =  [ADB] + list(command)        
@@ -83,6 +114,4 @@ def get_full_status():
             "stdout": None,
             }         
                 
-
-    
 status = get_full_status()

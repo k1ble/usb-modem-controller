@@ -12,6 +12,7 @@ def show_window(icon=None, item=None):
     root.after(0, root.deiconify)
     
 def quit_app(icon=None, item=None):
+    logger.info("app was closed")
     root.quit()
 
   
